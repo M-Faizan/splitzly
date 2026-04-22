@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Splitzly",
+    "slug": "splitzly",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#162840"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.splitzly.app"
+    },
+    "android": {
+      "package": "com.splitzly.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#162840"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
