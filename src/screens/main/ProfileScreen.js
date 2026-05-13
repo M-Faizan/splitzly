@@ -117,7 +117,7 @@ export default function ProfileScreen({ navigation }) {
     <View style={[styles.container, { height: windowHeight }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
         {/* Gradient header */}
         <LinearGradient
           colors={['#162840', '#1E3A55', '#162840']}
