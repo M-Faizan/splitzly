@@ -1,10 +1,9 @@
 import { showAlert } from '../../utils/alert'
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, StatusBar
+  TextInput, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, StatusBar
 } from 'react-native'
-import { Swipeable } from 'react-native-gesture-handler'
 import { useFocusEffect } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -231,48 +230,41 @@ export default function FriendsScreen({ navigation }) {
     const net = item.net || 0
     const hasBalance = Math.abs(net) > 0.01
 
-    const renderRightActions = () => (
-      <TouchableOpacity style={styles.deleteAction} onPress={() => removeFriend(item)}>
-        <Ionicons name="person-remove-outline" size={18} color={colors.white} />
-        <Text style={styles.deleteActionText}>Remove</Text>
-      </TouchableOpacity>
-    )
-
     return (
-      <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-        <View style={styles.friendCard}>
-          {/* Top row: avatar + info + balance (tappable for detail) */}
-          <TouchableOpacity
-            style={styles.friendCardTop}
-            onPress={() => setSelectedFriend(item)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.avatar, { backgroundColor: avatarStyle.bg }]}>
-              <Text style={[styles.avatarText, { color: avatarStyle.text }]}>
-                {item.profile?.name?.[0]?.toUpperCase() || '?'}
-              </Text>
-            </View>
-            <View style={styles.friendInfo}>
-              <Text style={styles.friendName}>{item.profile?.name}</Text>
-            </View>
-            <View style={styles.friendRight}>
-              {hasBalance ? (
-                <>
-                  <Text style={[styles.balanceAmount, { color: net > 0 ? colors.settled : colors.pending }]}>
-                    {net > 0 ? '' : '-'}{fmt(Math.abs(net))}
-                  </Text>
-                  <Text style={[styles.balanceLabel, { color: net > 0 ? colors.settled : colors.pending }]}>
-                    {net > 0 ? 'owes you' : 'you owe'}
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.settledLabel}>Settled up</Text>
-              )}
-            </View>
+      <View style={styles.friendCard}>
+        {/* Top row: avatar + info + balance (tappable for detail) */}
+        <TouchableOpacity
+          style={styles.friendCardTop}
+          onPress={() => setSelectedFriend(item)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.avatar, { backgroundColor: avatarStyle.bg }]}>
+            <Text style={[styles.avatarText, { color: avatarStyle.text }]}>
+              {item.profile?.name?.[0]?.toUpperCase() || '?'}
+            </Text>
+          </View>
+          <View style={styles.friendInfo}>
+            <Text style={styles.friendName}>{item.profile?.name}</Text>
+          </View>
+          <View style={styles.friendRight}>
+            {hasBalance ? (
+              <>
+                <Text style={[styles.balanceAmount, { color: net > 0 ? colors.settled : colors.pending }]}>
+                  {net > 0 ? '' : '-'}{fmt(Math.abs(net))}
+                </Text>
+                <Text style={[styles.balanceLabel, { color: net > 0 ? colors.settled : colors.pending }]}>
+                  {net > 0 ? 'owes you' : 'you owe'}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.settledLabel}>Settled up</Text>
+            )}
+          </View>
+          <TouchableOpacity onPress={() => removeFriend(item)} style={styles.removeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="person-remove-outline" size={16} color={colors.textMuted} />
           </TouchableOpacity>
-
-        </View>
-      </Swipeable>
+        </TouchableOpacity>
+      </View>
     )
   }
 
@@ -633,12 +625,10 @@ const styles = StyleSheet.create({
   offsetBarLabel: { fontSize: 10, color: colors.textMuted, fontWeight: '500', marginTop: 1 },
   offsetBarSep: { width: 1, backgroundColor: colors.border, marginHorizontal: spacing.sm },
   settledLabel: { fontSize: 11, fontWeight: '600', color: colors.textMuted },
-  deleteAction: {
-    backgroundColor: colors.pending, justifyContent: 'center', alignItems: 'center',
-    width: 80, borderRadius: radius.lg, marginBottom: spacing.sm, marginLeft: spacing.xs,
-    gap: 4,
+  removeBtn: {
+    padding: spacing.xs,
+    marginLeft: spacing.xs,
   },
-  deleteActionText: { color: colors.white, fontSize: 11, fontWeight: '700' },
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.md },
   emptyIllustration: {
     width: 100, height: 100, borderRadius: radius.full,

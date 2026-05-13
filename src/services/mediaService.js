@@ -3,8 +3,9 @@ import { supabase } from '../lib/supabase'
 async function uploadImage(bucket, path, uri, contentType) {
   const response = await fetch(uri)
   const blob = await response.blob()
+  const actualType = contentType || blob.type || 'image/jpeg'
   const arrayBuffer = await new Response(blob).arrayBuffer()
-  const { error } = await supabase.storage.from(bucket).upload(path, arrayBuffer, { contentType, upsert: true })
+  const { error } = await supabase.storage.from(bucket).upload(path, arrayBuffer, { contentType: actualType, upsert: true })
   if (error) throw error
   const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path)
   return `${publicUrl}?t=${Date.now()}`
@@ -18,9 +19,9 @@ async function removeFolder(bucket, folder) {
   }
 }
 
-export async function uploadAvatar(userId, uri) {
-  const ext = uri.split('.').pop()
-  const url = await uploadImage('avatars', `${userId}/avatar.${ext}`, uri, `image/${ext}`)
+export async function uploadAvatar(userId, uri, mimeType) {
+  const ext = mimeType ? mimeType.split('/')[1] : (uri.split('.').pop() || 'jpeg')
+  const url = await uploadImage('avatars', `${userId}/avatar.${ext}`, uri, mimeType || `image/${ext}`)
   await supabase.from('profiles').update({ avatar_url: url }).eq('id', userId)
   return url
 }
@@ -30,9 +31,9 @@ export async function removeAvatar(userId) {
   await supabase.from('profiles').update({ avatar_url: null }).eq('id', userId)
 }
 
-export async function uploadGroupImage(groupId, uri) {
-  const ext = uri.split('.').pop()
-  const url = await uploadImage('group-images', `${groupId}/cover.${ext}`, uri, `image/${ext}`)
+export async function uploadGroupImage(groupId, uri, mimeType) {
+  const ext = mimeType ? mimeType.split('/')[1] : (uri.split('.').pop() || 'jpeg')
+  const url = await uploadImage('group-images', `${groupId}/cover.${ext}`, uri, mimeType || `image/${ext}`)
   await supabase.from('groups').update({ image_url: url }).eq('id', groupId)
   return url
 }

@@ -2,10 +2,10 @@ import { showAlert } from '../../utils/alert'
 import React, { useEffect, useState, useRef } from 'react'
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, Image, Keyboard
+  ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, Image, Keyboard
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import * as ImagePicker from 'expo-image-picker'
+import { pickImage } from '../../utils/pickImage'
 import { supabase } from '../../lib/supabase'
 import { logActivity } from '../../lib/activityLog'
 import { useAuth } from '../../hooks/useAuth'
@@ -179,15 +179,32 @@ export default function AddExpenseScreen({ route, navigation }) {
   }
 
   async function scanReceipt() {
-    const { status } = Platform.OS === 'web' ? { status: 'granted' } : await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') return showAlert('Permission needed', 'Please allow photo access to scan receipts.')
-
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.5, base64: true })
-    if (result.canceled) return
-
     setScanning(true)
     try {
-      const parsed = await scanReceiptAI(result.assets[0].base64, 'image/jpeg')
+      const picked = await pickImage()
+      if (!picked) { setScanning(false); return }
+
+      // For web we get a blob URI — need to convert to base64 for the AI service
+      let base64, mimeType
+      if (Platform.OS === 'web') {
+        const response = await fetch(picked.uri)
+        const blob = await response.blob()
+        mimeType = blob.type || 'image/jpeg'
+        base64 = await new Promise((res) => {
+          const reader = new FileReader()
+          reader.onloadend = () => res(reader.result.split(',')[1])
+          reader.readAsDataURL(blob)
+        })
+      } else {
+        // Native: re-launch with base64 enabled
+        const ImagePicker = await import('expo-image-picker')
+        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.5, base64: true })
+        if (result.canceled) { setScanning(false); return }
+        base64 = result.assets[0].base64
+        mimeType = 'image/jpeg'
+      }
+
+      const parsed = await scanReceiptAI(base64, mimeType)
       if (parsed.description) setDescription(parsed.description)
       if (parsed.amount) setAmount(String(parseFloat(parsed.amount).toFixed(2)))
       if (parsed.category && CATEGORIES.includes(parsed.category)) setCategory(parsed.category)

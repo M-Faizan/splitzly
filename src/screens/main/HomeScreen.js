@@ -2,7 +2,7 @@ import { showAlert } from '../../utils/alert'
 import React, { useCallback, useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, ScrollView, Alert, Image, Modal, FlatList, StatusBar
+  ActivityIndicator, ScrollView, Image, Modal, FlatList, StatusBar
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'

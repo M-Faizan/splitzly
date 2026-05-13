@@ -6,7 +6,7 @@ import {
 } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
-import * as ImagePicker from 'expo-image-picker'
+import { pickImage } from '../../utils/pickImage'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { supabase } from '../../lib/supabase'
 import { logActivity } from '../../lib/activityLog'
@@ -135,13 +135,11 @@ export default function GroupDetailScreen({ route, navigation }) {
   }
 
   async function pickGroupImage() {
-    const { status } = Platform.OS === 'web' ? { status: 'granted' } : await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') return showAlert('Permission needed', 'Please allow access to your photo library.')
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: Platform.OS !== 'web', aspect: [1, 1], quality: 0.7 })
-    if (result.canceled) return
+    const picked = await pickImage()
+    if (!picked) return
     setUploadingImage(true)
     try {
-      const url = await uploadGroupImage(group.id, result.assets[0].uri)
+      const url = await uploadGroupImage(group.id, picked.uri, picked.mimeType)
       setGroupImageUrl(url)
     } catch (e) {
       showAlert('Upload failed', e.message)

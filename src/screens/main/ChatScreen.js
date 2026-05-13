@@ -23,7 +23,14 @@ export default function ChatScreen({ route, navigation }) {
   const flatListRef = useRef(null)
 
   useEffect(() => {
-    navigation.setOptions({ title: partnerName })
+    navigation.setOptions({
+      title: partnerName,
+      headerLeft: () => (
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingHorizontal: spacing.sm, padding: 4 }}>
+          <Ionicons name="chevron-back" size={24} color={colors.primary} />
+        </TouchableOpacity>
+      ),
+    })
     supabase.from('profiles').select('name').eq('id', user.id).single()
       .then(({ data }) => setMyName(data?.name?.split(' ')[0] || 'You'))
   }, [partnerName])
@@ -93,6 +100,15 @@ export default function ChatScreen({ route, navigation }) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={90}
     >
+      {Platform.OS === 'web' && (
+        <View style={styles.webHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.webBackBtn}>
+            <Ionicons name="chevron-back" size={22} color={colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.webHeaderTitle}>{partnerName}</Text>
+          <View style={{ width: 36 }} />
+        </View>
+      )}
       {loading
         ? <ActivityIndicator size="large" color={colors.primary} style={{ flex: 1 }} />
         : <FlatList
@@ -142,6 +158,13 @@ export default function ChatScreen({ route, navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
+  webHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
+    backgroundColor: '#162840', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  webBackBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
+  webHeaderTitle: { fontSize: 16, fontWeight: '700', color: colors.white },
   listContent: { padding: spacing.md, gap: spacing.sm, flexGrow: 1 },
   msgRow: { maxWidth: '80%', marginBottom: 2 },
   msgRowRight: { alignSelf: 'flex-end', alignItems: 'flex-end' },

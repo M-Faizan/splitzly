@@ -1,7 +1,7 @@
 import { showAlert } from '../../utils/alert'
 import React, { useState, useEffect } from 'react'
 import {
-  View, Text, StyleSheet, TouchableOpacity, Alert,
+  View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, ScrollView, StatusBar
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'

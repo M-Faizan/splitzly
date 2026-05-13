@@ -28,7 +28,8 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "template": "./web/index.html"
     },
     "extra": {
       "eas": {
