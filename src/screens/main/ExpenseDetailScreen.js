@@ -1,3 +1,4 @@
+import { showAlert } from '../../utils/alert'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, Alert, Image } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
@@ -49,7 +50,7 @@ export default function ExpenseDetailScreen({ route, navigation }) {
   )
 
   async function handleDelete() {
-    Alert.alert('Delete Expense', 'This cannot be undone.', [
+    showAlert('Delete Expense', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
@@ -168,7 +169,7 @@ export default function ExpenseDetailScreen({ route, navigation }) {
       })
     }
     setSettling(false)
-    if (error) return Alert.alert('Error', 'Could not record payment.')
+    if (error) return showAlert('Error', 'Could not record payment.')
     fetchSplits()
   }
 

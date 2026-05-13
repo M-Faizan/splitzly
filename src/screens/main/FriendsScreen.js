@@ -1,3 +1,4 @@
+import { showAlert } from '../../utils/alert'
 import React, { useState, useRef, useCallback } from 'react'
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
@@ -81,7 +82,7 @@ export default function FriendsScreen({ navigation }) {
       }))
     } else {
       setSettling(false)
-      return Alert.alert('Nothing to settle', 'No outstanding expense splits found.')
+      return showAlert('Nothing to settle', 'No outstanding expense splits found.')
     }
 
     const { error } = await supabase.from('payments').insert(payments)
@@ -96,7 +97,7 @@ export default function FriendsScreen({ navigation }) {
       ])
     }
     setSettling(false)
-    if (error) return Alert.alert('Error', 'Could not record payment.')
+    if (error) return showAlert('Error', 'Could not record payment.')
     setSettleTarget(null)
     fetchFriends()
   }
@@ -195,22 +196,22 @@ export default function FriendsScreen({ navigation }) {
       .eq('email', searchEmail.toLowerCase().trim())
       .single()
 
-    if (!found) { setAdding(false); return Alert.alert('Not Found', 'No user with that email.') }
-    if (found.id === user.id) { setAdding(false); return Alert.alert('Oops', "You can't add yourself.") }
+    if (!found) { setAdding(false); return showAlert('Not Found', 'No user with that email.') }
+    if (found.id === user.id) { setAdding(false); return showAlert('Oops', "You can't add yourself.") }
 
     const { error } = await supabase.from('friendships').insert({
       user_id: user.id, friend_id: found.id, status: 'accepted'
     })
 
     setAdding(false)
-    if (error) return Alert.alert('Error', 'Could not add friend.')
+    if (error) return showAlert('Error', 'Could not add friend.')
     setModalVisible(false)
     setSearchEmail('')
     fetchFriends()
   }
 
   async function removeFriend(item) {
-    Alert.alert(
+    showAlert(
       'Remove Friend',
       `Remove ${item.profile?.name} from your friends?`,
       [
@@ -591,7 +592,7 @@ const styles = StyleSheet.create({
   addBtnText: { color: colors.white, fontWeight: '700', fontSize: 14 },
 
   // Summary card - removed (duplicate of home screen)
-  listContent: { padding: spacing.lg },
+  listContent: { padding: spacing.lg, maxWidth: 600, width: '100%', alignSelf: 'center' },
   friendCard: {
     backgroundColor: colors.background,
     borderRadius: radius.lg, ...shadow.sm, marginBottom: spacing.sm,

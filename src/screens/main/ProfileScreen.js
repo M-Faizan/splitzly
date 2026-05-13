@@ -1,8 +1,9 @@
+import { showAlert } from '../../utils/alert'
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView,
-  Platform, Modal, FlatList, Image, Linking, StatusBar
+  ScrollView, ActivityIndicator,
+  Platform, Modal, FlatList, Image, Linking, StatusBar, useWindowDimensions
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -19,6 +20,7 @@ import SplitzlyLogo from '../../components/SplitzlyLogo'
 
 export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
   const { user } = useAuth()
   const { setCurrency: setGlobalCurrency } = useCurrency()
   const [name, setName] = useState('')
@@ -55,16 +57,16 @@ export default function ProfileScreen({ navigation }) {
   }
 
   async function pickAvatar() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') return Alert.alert('Permission needed', 'Please allow access to your photo library.')
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.7 })
+    const { status } = Platform.OS === 'web' ? { status: 'granted' } : await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') return showAlert('Permission needed', 'Please allow access to your photo library.')
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: Platform.OS !== 'web', aspect: [1, 1], quality: 0.7 })
     if (result.canceled) return
     setUploadingAvatar(true)
     try {
       const url = await uploadAvatar(user.id, result.assets[0].uri)
       setAvatarUrl(url)
     } catch (e) {
-      Alert.alert('Upload failed', e.message)
+      showAlert('Upload failed', e.message)
     }
     setUploadingAvatar(false)
   }
@@ -74,7 +76,7 @@ export default function ProfileScreen({ navigation }) {
       await removeAvatarFile(user.id)
       setAvatarUrl(null)
     } catch (e) {
-      Alert.alert('Could not delete photo', e.message)
+      showAlert('Could not delete photo', e.message)
     }
   }
 
@@ -83,7 +85,7 @@ export default function ProfileScreen({ navigation }) {
     setSaving(true)
     const { error } = await supabase.from('profiles').update({ name: nameInput.trim() }).eq('id', user.id)
     setSaving(false)
-    if (error) return Alert.alert('Error', error.message)
+    if (error) return showAlert('Error', error.message)
     setName(nameInput.trim())
     setEditingName(false)
   }
@@ -96,7 +98,7 @@ export default function ProfileScreen({ navigation }) {
   }
 
   async function handleSignOut() {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+    showAlert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: () => supabase.auth.signOut() },
     ])
@@ -112,71 +114,73 @@ export default function ProfileScreen({ navigation }) {
   )
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <View style={[styles.container, { height: windowHeight }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      {/* Gradient header */}
-      <LinearGradient
-        colors={['#162840', '#1E3A55', '#162840']}
-        locations={[0, 0.5, 1]}
-        style={[styles.header, { paddingTop: insets.top + spacing.sm }]}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.white} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ width: 36 }} />
-      </LinearGradient>
 
-      {/* Avatar + name — overlaps header */}
-      <View style={styles.avatarSection}>
-        <View style={styles.avatarWrapper}>
-          <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8}>
-            {uploadingAvatar
-              ? <View style={styles.avatarCircle}><ActivityIndicator color={colors.white} /></View>
-              : avatarUrl
-                ? <Image source={{ uri: avatarUrl }} style={styles.avatarCircle} />
-                : <View style={styles.avatarCircle}><Text style={styles.avatarText}>{initials}</Text></View>
-            }
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}>
+        {/* Gradient header */}
+        <LinearGradient
+          colors={['#162840', '#1E3A55', '#162840']}
+          locations={[0, 0.5, 1]}
+          style={[styles.header, { paddingTop: insets.top + spacing.sm }]}
+        >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color={colors.white} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={pickAvatar} style={styles.avatarEditBadge}>
-            <Ionicons name="camera" size={12} color={colors.white} />
-          </TouchableOpacity>
-          {avatarUrl && (
-            <TouchableOpacity onPress={removeAvatar} style={styles.avatarRemoveBadge}>
-              <Ionicons name="close" size={11} color={colors.white} />
-            </TouchableOpacity>
-          )}
-        </View>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <View style={{ width: 36 }} />
+        </LinearGradient>
 
-        {editingName ? (
-          <View style={styles.nameEditRow}>
-            <TextInput
-              style={styles.nameInput}
-              value={nameInput}
-              onChangeText={setNameInput}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={saveName}
-              placeholder="Your name"
-              placeholderTextColor={colors.textMuted}
-            />
-            <TouchableOpacity onPress={saveName} style={styles.saveNameBtn} disabled={saving}>
-              {saving
-                ? <ActivityIndicator size="small" color={colors.white} />
-                : <Ionicons name="checkmark" size={18} color={colors.white} />
+        {/* Avatar + name */}
+        <View style={styles.avatarSection}>
+          <View style={styles.avatarWrapper}>
+            <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8}>
+              {uploadingAvatar
+                ? <View style={styles.avatarCircle}><ActivityIndicator color={colors.white} /></View>
+                : avatarUrl
+                  ? <Image source={{ uri: avatarUrl }} style={styles.avatarCircle} />
+                  : <View style={styles.avatarCircle}><Text style={styles.avatarText}>{initials}</Text></View>
               }
             </TouchableOpacity>
+            <TouchableOpacity onPress={pickAvatar} style={styles.avatarEditBadge}>
+              <Ionicons name="camera" size={12} color={colors.white} />
+            </TouchableOpacity>
+            {avatarUrl && (
+              <TouchableOpacity onPress={removeAvatar} style={styles.avatarRemoveBadge}>
+                <Ionicons name="close" size={11} color={colors.white} />
+              </TouchableOpacity>
+            )}
           </View>
-        ) : (
-          <TouchableOpacity style={styles.nameRow} onPress={() => { setNameInput(name); setEditingName(true) }}>
-            <Text style={styles.profileName}>{name}</Text>
-            <Ionicons name="pencil-outline" size={15} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-        <Text style={styles.profileEmail}>{email}</Text>
-      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
+          {editingName ? (
+            <View style={styles.nameEditRow}>
+              <TextInput
+                style={styles.nameInput}
+                value={nameInput}
+                onChangeText={setNameInput}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={saveName}
+                placeholder="Your name"
+                placeholderTextColor={colors.textMuted}
+              />
+              <TouchableOpacity onPress={saveName} style={styles.saveNameBtn} disabled={saving}>
+                {saving
+                  ? <ActivityIndicator size="small" color={colors.white} />
+                  : <Ionicons name="checkmark" size={18} color={colors.white} />
+                }
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.nameRow} onPress={() => { setNameInput(name); setEditingName(true) }}>
+              <Text style={styles.profileName}>{name}</Text>
+              <Ionicons name="pencil-outline" size={15} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+          <Text style={styles.profileEmail}>{email}</Text>
+        </View>
+
+        <View style={styles.content}>
 
         {/* Stats */}
         <View style={styles.statsCard}>
@@ -272,7 +276,7 @@ export default function ProfileScreen({ navigation }) {
         {/* Sign out — subtle at the bottom */}
         <TouchableOpacity style={styles.replayBtn} onPress={async () => {
           await AsyncStorage.removeItem('onboarding_done')
-          Alert.alert('Done', 'Relaunch the app to see the onboarding tour.')
+          showAlert('Done', 'Relaunch the app to see the onboarding tour.')
         }}>
           <Ionicons name="play-circle-outline" size={16} color={colors.textMuted} />
           <Text style={styles.replayText}>Replay Onboarding</Text>
@@ -284,6 +288,7 @@ export default function ProfileScreen({ navigation }) {
         </TouchableOpacity>
 
         <Text style={styles.footerText}>© {new Date().getFullYear()} Splitzly · v1.0.0</Text>
+        </View>
       </ScrollView>
 
       {/* Currency Modal */}
@@ -321,12 +326,12 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surface },
+  container: { flex: 1, backgroundColor: colors.surface, overflow: 'hidden' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   header: {
@@ -378,7 +383,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center',
   },
 
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, maxWidth: 600, width: '100%', alignSelf: 'center' },
 
   statsCard: {
     flexDirection: 'row', backgroundColor: colors.background,

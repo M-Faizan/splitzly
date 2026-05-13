@@ -11,7 +11,7 @@ export default function OfflineBanner() {
     Animated.timing(translateY, {
       toValue: isConnected ? -60 : 0,
       duration: 300,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start()
   }, [isConnected])
 

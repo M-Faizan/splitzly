@@ -1,3 +1,4 @@
+import { showAlert } from '../../utils/alert'
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity, Alert,
@@ -78,7 +79,7 @@ export default function SettleUpScreen({ route, navigation }) {
     })
 
     setSettling(false)
-    Alert.alert('Done!', `You settled ${fmt(total)} with ${friend?.name}`, [
+    showAlert('Done!', `You settled ${fmt(total)} with ${friend?.name}`, [
       { text: 'OK', onPress: () => navigation.goBack() }
     ])
   }

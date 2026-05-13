@@ -1,3 +1,4 @@
+import { showAlert } from '../../utils/alert'
 import React, { useEffect, useState, useCallback } from 'react'
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
@@ -134,16 +135,16 @@ export default function GroupDetailScreen({ route, navigation }) {
   }
 
   async function pickGroupImage() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') return Alert.alert('Permission needed', 'Please allow access to your photo library.')
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, aspect: [1, 1], quality: 0.7 })
+    const { status } = Platform.OS === 'web' ? { status: 'granted' } : await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') return showAlert('Permission needed', 'Please allow access to your photo library.')
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: Platform.OS !== 'web', aspect: [1, 1], quality: 0.7 })
     if (result.canceled) return
     setUploadingImage(true)
     try {
       const url = await uploadGroupImage(group.id, result.assets[0].uri)
       setGroupImageUrl(url)
     } catch (e) {
-      Alert.alert('Upload failed', e.message)
+      showAlert('Upload failed', e.message)
     }
     setUploadingImage(false)
   }
@@ -164,7 +165,7 @@ export default function GroupDetailScreen({ route, navigation }) {
     setSavingName(true)
     const { error } = await supabase.from('groups').update({ name: editNameInput.trim() }).eq('id', group.id)
     setSavingName(false)
-    if (error) return Alert.alert('Error', error.message)
+    if (error) return showAlert('Error', error.message)
     setGroupName(editNameInput.trim())
     setSettingsModal(false)
   }
@@ -197,7 +198,7 @@ export default function GroupDetailScreen({ route, navigation }) {
       await supabase.from('payments').delete().eq('group_id', group.id)
       await supabase.from('group_members').delete().eq('group_id', group.id)
       const { error } = await supabase.from('groups').delete().eq('id', group.id)
-      if (error) Alert.alert('Could not delete group', error.message)
+      if (error) showAlert('Could not delete group', error.message)
       else navigation.goBack()
     }
 
@@ -207,7 +208,7 @@ export default function GroupDetailScreen({ route, navigation }) {
     }
 
     setTimeout(() => {
-      Alert.alert('Delete Group', `"${groupName}" has ${expenses.length} expense${expenses.length === 1 ? '' : 's'}. Deleting it will remove all expenses and debts permanently.`, [
+      showAlert('Delete Group', `"${groupName}" has ${expenses.length} expense${expenses.length === 1 ? '' : 's'}. Deleting it will remove all expenses and debts permanently.`, [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: doDelete },
       ])
@@ -228,7 +229,7 @@ export default function GroupDetailScreen({ route, navigation }) {
     const notInGroup = allFriends.filter(f => f && !memberIds.includes(f.id))
 
     if (notInGroup.length === 0) {
-      return Alert.alert('No friends to add', 'All your friends are already in this group.')
+      return showAlert('No friends to add', 'All your friends are already in this group.')
     }
 
     setFriends(notInGroup)
@@ -239,7 +240,7 @@ export default function GroupDetailScreen({ route, navigation }) {
     setAdding(true)
     const { error } = await supabase.from('group_members').insert({ group_id: group.id, user_id: friend.id })
     setAdding(false)
-    if (error) return Alert.alert('Error', error.message)
+    if (error) return showAlert('Error', error.message)
 
     const { data: profile } = await supabase.from('profiles').select('name').eq('id', user.id).single()
     const actorName = profile?.name || 'Someone'
@@ -513,6 +514,7 @@ export default function GroupDetailScreen({ route, navigation }) {
         groupId={group.id}
         groupName={groupName}
         groupCreatedBy={groupCreatedBy}
+        group={group}
         members={members}
         onClose={() => setSelectedExpense(null)}
         onSettled={fetchData}

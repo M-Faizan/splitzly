@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import {
   View, Text, Modal, TouchableOpacity, ScrollView,
-  StyleSheet, Alert, ActivityIndicator, Image,
+  StyleSheet, ActivityIndicator, Image,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -10,8 +10,9 @@ import { logActivity } from '../../lib/activityLog'
 import { recordPayment, logSettlement } from '../../services/paymentService'
 import { colors, spacing, radius, shadow, categoryColors } from '../../constants/theme'
 import { useCurrency } from '../../hooks/useCurrency'
+import { showAlert } from '../../utils/alert'
 
-export default function ExpenseDetailModal({ visible, expense, currentUserId, onClose, onSettled, onDeleted, navigation, groupName, groupCreatedBy }) {
+export default function ExpenseDetailModal({ visible, expense, currentUserId, onClose, onSettled, onDeleted, navigation, groupName, groupCreatedBy, group, members }) {
   const insets = useSafeAreaInsets()
   const { fmt } = useCurrency()
 
@@ -109,13 +110,13 @@ export default function ExpenseDetailModal({ visible, expense, currentUserId, on
       onClose()
       onSettled?.()
     } catch (e) {
-      Alert.alert('Error', 'Could not record payment.')
+      showAlert('Error', 'Could not record payment.')
     }
     setSettling(false)
   }
 
   async function handleDelete() {
-    Alert.alert('Delete Expense', 'This cannot be undone.', [
+    showAlert('Delete Expense', 'This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
@@ -168,9 +169,16 @@ export default function ExpenseDetailModal({ visible, expense, currentUserId, on
               </View>
             </View>
             {(expense.paid_by === currentUserId || groupCreatedBy === currentUserId) && (
-              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-                <Ionicons name="trash-outline" size={16} color={colors.pending} />
-              </TouchableOpacity>
+              <View style={styles.headerActions}>
+                {group && (
+                  <TouchableOpacity style={styles.editBtn} onPress={() => { onClose(); setTimeout(() => navigation?.navigate('AddExpense', { group, members, expense }), 300) }}>
+                    <Ionicons name="pencil-outline" size={16} color={colors.primary} />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+                  <Ionicons name="trash-outline" size={16} color={colors.pending} />
+                </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -269,7 +277,7 @@ export default function ExpenseDetailModal({ visible, expense, currentUserId, on
                     read: false,
                   })
                 ))
-                Alert.alert('Nudged!', `Sent a reminder to ${pendingOthers.length} people.`)
+                showAlert('Nudged!', `Sent a reminder to ${pendingOthers.length} people.`)
               }}
               activeOpacity={0.85}
             >
@@ -298,6 +306,8 @@ const styles = StyleSheet.create({
   catDot: { width: 5, height: 5, borderRadius: 3 },
   catText: { fontSize: 10, fontWeight: '700' },
   metaText: { fontSize: 11, color: colors.textMuted, fontWeight: '500' },
+  headerActions: { flexDirection: 'row', gap: spacing.xs },
+  editBtn: { padding: spacing.xs, borderRadius: radius.md, backgroundColor: colors.primaryLight },
   deleteBtn: { padding: spacing.xs, borderRadius: radius.md, backgroundColor: colors.pendingBg },
   amountRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   amount: { fontSize: 30, fontWeight: '800', color: colors.text, letterSpacing: -1 },

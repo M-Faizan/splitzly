@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.splitzly.app"
+      "bundleIdentifier": "com.splitzly.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.splitzly.app",
@@ -26,6 +29,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "e97a10c2-e725-4d70-b913-41131834fe44"
+      }
+    },
+    "owner": "fazig117"
   }
 }

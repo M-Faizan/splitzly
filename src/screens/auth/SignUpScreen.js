@@ -1,3 +1,4 @@
+import { showAlert } from '../../utils/alert'
 import React, { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity,
@@ -19,8 +20,8 @@ export default function SignUpScreen({ navigation }) {
   const [loading, setLoading] = useState(false)
 
   async function handleSignUp() {
-    if (!name || !email || !password) return Alert.alert('Error', 'Please fill in all fields')
-    if (password.length < 6) return Alert.alert('Error', 'Password must be at least 6 characters')
+    if (!name || !email || !password) return showAlert('Error', 'Please fill in all fields')
+    if (password.length < 6) return showAlert('Error', 'Password must be at least 6 characters')
     setLoading(true)
 
     const { data, error } = await supabase.auth.signUp({
@@ -28,7 +29,7 @@ export default function SignUpScreen({ navigation }) {
       password,
       options: { data: { name } }
     })
-    if (error) { setLoading(false); return Alert.alert('Sign Up Failed', error.message) }
+    if (error) { setLoading(false); return showAlert('Sign Up Failed', error.message) }
 
     if (data.user) {
       const { error: profileError } = await supabase
@@ -164,6 +165,9 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
   },
 
   logoWrap: {

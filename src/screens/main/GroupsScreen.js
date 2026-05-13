@@ -1,3 +1,4 @@
+import { showAlert } from '../../utils/alert'
 import React, { useState, useCallback } from 'react'
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
@@ -102,7 +103,7 @@ export default function GroupsScreen({ navigation }) {
       .select()
       .single()
 
-    if (error) { setCreating(false); return Alert.alert('Error', error.message) }
+    if (error) { setCreating(false); return showAlert('Error', error.message) }
 
     await supabase.from('group_members').insert({ group_id: data.id, user_id: user.id })
     setCreating(false)
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
   addBtnText: { color: colors.white, fontWeight: '700', fontSize: 14 },
-  listContent: { padding: spacing.lg, gap: spacing.sm },
+  listContent: { padding: spacing.lg, gap: spacing.sm, maxWidth: 600, width: '100%', alignSelf: 'center' },
   groupCard: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     padding: spacing.md, backgroundColor: colors.background,

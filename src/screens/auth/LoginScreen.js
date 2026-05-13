@@ -16,13 +16,15 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
   async function handleLogin() {
-    if (!email || !password) return Alert.alert('Error', 'Please fill in all fields')
+    if (!email || !password) { setErrorMsg('Please fill in all fields'); return }
+    setErrorMsg('')
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
-    if (error) Alert.alert('Login Failed', error.message)
+    if (error) setErrorMsg(error.message)
   }
 
   return (
@@ -86,6 +88,8 @@ export default function LoginScreen({ navigation }) {
               }
             </TouchableOpacity>
 
+            {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
+
             <TouchableOpacity style={styles.forgotBtn}>
               <Text style={styles.forgotText}>Forgot password?</Text>
             </TouchableOpacity>
@@ -135,6 +139,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center',
   },
 
   logoWrap: {
@@ -187,8 +194,12 @@ const styles = StyleSheet.create({
     color: colors.white, fontWeight: '800', fontSize: 16, letterSpacing: 0.3,
   },
 
+  errorText: {
+    color: '#FF6B6B', fontSize: 13, textAlign: 'center',
+    marginTop: spacing.sm, fontWeight: '500',
+  },
+
   forgotBtn: {
-    alignItems: 'center',
     paddingVertical: spacing.md,
   },
   forgotText: {

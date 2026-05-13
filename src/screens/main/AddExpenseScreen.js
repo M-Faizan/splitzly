@@ -1,3 +1,4 @@
+import { showAlert } from '../../utils/alert'
 import React, { useEffect, useState, useRef } from 'react'
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
@@ -113,7 +114,7 @@ export default function AddExpenseScreen({ route, navigation }) {
     const notInGroup = allFriends.filter(f => f && !memberIds.includes(f.id))
 
     if (notInGroup.length === 0) {
-      return Alert.alert('No friends to add', 'All your friends are already in this group. Add them from the Friends tab first.')
+      return showAlert('No friends to add', 'All your friends are already in this group. Add them from the Friends tab first.')
     }
     setFriendsNotInGroup(notInGroup)
     setAddFriendModal(true)
@@ -127,7 +128,7 @@ export default function AddExpenseScreen({ route, navigation }) {
     setAddingFriendId(null)
 
     if (error && !error.message.includes('duplicate')) {
-      return Alert.alert('Could not add to group', error.message)
+      return showAlert('Could not add to group', error.message)
     }
 
     const { data: profile } = await supabase.from('profiles').select('name').eq('id', user.id).single()
@@ -178,8 +179,8 @@ export default function AddExpenseScreen({ route, navigation }) {
   }
 
   async function scanReceipt() {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (status !== 'granted') return Alert.alert('Permission needed', 'Please allow photo access to scan receipts.')
+    const { status } = Platform.OS === 'web' ? { status: 'granted' } : await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (status !== 'granted') return showAlert('Permission needed', 'Please allow photo access to scan receipts.')
 
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.5, base64: true })
     if (result.canceled) return
@@ -194,14 +195,14 @@ export default function AddExpenseScreen({ route, navigation }) {
       if (parsed.items?.length > 0) { setReceiptItems(parsed.items); setReceiptExpanded(true) }
     } catch (e) {
       console.log('scan error:', e.message)
-      Alert.alert('Could not scan receipt', 'Try entering details manually.')
+      showAlert('Could not scan receipt', 'Try entering details manually.')
     }
     setScanning(false)
   }
 
   async function saveExpense() {
-    if (!description.trim()) return Alert.alert('Error', 'Please enter a description')
-    if (!amount || isNaN(parseFloat(amount))) return Alert.alert('Error', 'Please enter a valid amount')
+    if (!description.trim()) return showAlert('Error', 'Please enter a description')
+    if (!amount || isNaN(parseFloat(amount))) return showAlert('Error', 'Please enter a valid amount')
 
     const toSplit = selectedMembers.length > 0 ? selectedMembers : [user.id]
     const totalAmount = parseFloat(amount)
@@ -210,7 +211,7 @@ export default function AddExpenseScreen({ route, navigation }) {
     if (splitMode === 'custom') {
       const sum = customTotal()
       if (Math.abs(sum - totalAmount) > 0.01) {
-        return Alert.alert('Amounts don\'t add up', `Custom amounts total ${fmt(sum)} but expense is ${fmt(totalAmount)}. They must match.`)
+        return showAlert('Amounts don\'t add up', `Custom amounts total ${fmt(sum)} but expense is ${fmt(totalAmount)}. They must match.`)
       }
     }
 
@@ -228,7 +229,7 @@ export default function AddExpenseScreen({ route, navigation }) {
         description: description.trim(), amount: totalAmount, category
       }).eq('id', editingExpense.id)
 
-      if (error) { setSaving(false); return Alert.alert('Error', error.message) }
+      if (error) { setSaving(false); return showAlert('Error', error.message) }
 
       await supabase.from('expense_splits').delete().eq('expense_id', editingExpense.id)
       await supabase.from('expense_splits').insert(
@@ -248,7 +249,7 @@ export default function AddExpenseScreen({ route, navigation }) {
       })
       .select().single()
 
-    if (error) { setSaving(false); return Alert.alert('Error', 'Could not save expense.') }
+    if (error) { setSaving(false); return showAlert('Error', 'Could not save expense.') }
 
     await supabase.from('expense_splits').insert(
       splits.map(s => ({ ...s, expense_id: expense.id }))

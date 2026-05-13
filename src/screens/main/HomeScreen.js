@@ -1,3 +1,4 @@
+import { showAlert } from '../../utils/alert'
 import React, { useCallback, useState } from 'react'
 import {
   View, Text, StyleSheet, TouchableOpacity,
@@ -29,6 +30,18 @@ export default function HomeScreen({ navigation }) {
   const [userName, setUserName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [selectedExpense, setSelectedExpense] = useState(null)
+  const [selectedExpenseMembers, setSelectedExpenseMembers] = useState([])
+
+  async function openExpense(expense) {
+    setSelectedExpense(expense)
+    if (expense?.group_id) {
+      const { data } = await supabase
+        .from('group_members')
+        .select('user_id, profiles:user_id(id, name, avatar_url)')
+        .eq('group_id', expense.group_id)
+      setSelectedExpenseMembers((data || []).map(m => ({ ...m.profiles, user_id: m.user_id })))
+    }
+  }
 
   useFocusEffect(
     useCallback(() => { fetchData() }, [])
@@ -216,7 +229,7 @@ export default function HomeScreen({ navigation }) {
 
   async function handleAddExpense() {
     if (groups.length === 0) {
-      Alert.alert('No groups yet', 'Create a group first before adding an expense.', [
+      showAlert('No groups yet', 'Create a group first before adding an expense.', [
         { text: 'Go to Groups', onPress: () => navigation.navigate('Groups') },
         { text: 'Cancel', style: 'cancel' },
       ])
@@ -241,8 +254,14 @@ export default function HomeScreen({ navigation }) {
     navigation.navigate('AddExpense', { group: g, members })
   }
 
+  const net = summary.owed - summary.owing
+
+  const hour = new Date().getHours()
+  const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const displayName = userName ? userName.charAt(0).toUpperCase() + userName.slice(1) : ''
+
   async function handleLogout() {
-    Alert.alert(
+    showAlert(
       displayName || 'Account',
       'What would you like to do?',
       [
@@ -254,12 +273,6 @@ export default function HomeScreen({ navigation }) {
       ]
     )
   }
-
-  const net = summary.owed - summary.owing
-
-  const hour = new Date().getHours()
-  const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const displayName = userName ? userName.charAt(0).toUpperCase() + userName.slice(1) : ''
 
   return (
     <View style={styles.container}>
@@ -329,7 +342,7 @@ export default function HomeScreen({ navigation }) {
                         <TouchableOpacity
                           key={item.expenseId}
                           style={[styles.owingRow, idx < owingBreakdown.length - 1 && styles.owingRowBorder]}
-                          onPress={() => setSelectedExpense(item.expense)}
+                          onPress={() => openExpense(item.expense)}
                           activeOpacity={0.7}
                         >
                           <View style={[styles.owingCatBox, { backgroundColor: catColor.bg }]}>
@@ -368,7 +381,7 @@ export default function HomeScreen({ navigation }) {
                         <TouchableOpacity
                           key={item.splitId}
                           style={[styles.owingRow, idx < owedBreakdown.length - 1 && styles.owingRowBorder]}
-                          onPress={() => setSelectedExpense(item.expense)}
+                          onPress={() => openExpense(item.expense)}
                           activeOpacity={0.7}
                         >
                           <View style={[styles.owingCatBox, { backgroundColor: catColor.bg }]}>
@@ -435,7 +448,7 @@ export default function HomeScreen({ navigation }) {
                         <TouchableOpacity
                           key={item.id}
                           style={styles.expenseCard}
-                          onPress={() => setSelectedExpense(item)}
+                          onPress={() => openExpense(item)}
                           activeOpacity={0.7}
                         >
                           <View style={[styles.catIconBox, { backgroundColor: catColor.bg }]}>
@@ -520,7 +533,9 @@ export default function HomeScreen({ navigation }) {
         visible={!!selectedExpense}
         expense={selectedExpense}
         currentUserId={user.id}
-        onClose={() => setSelectedExpense(null)}
+        group={selectedExpense?.group}
+        members={selectedExpenseMembers}
+        onClose={() => { setSelectedExpense(null); setSelectedExpenseMembers([]) }}
         onSettled={fetchData}
         onDeleted={fetchData}
         navigation={navigation}
@@ -614,7 +629,7 @@ const styles = StyleSheet.create({
   balanceTotalAmount: { fontSize: 18, fontWeight: '800', color: colors.text },
   balanceTotalLabel: { fontSize: 10, color: colors.textMuted, fontWeight: '500', marginTop: 2 },
 
-  scrollContent: { paddingHorizontal: spacing.lg, paddingBottom: 100 },
+  scrollContent: { paddingHorizontal: spacing.lg, paddingBottom: 100, maxWidth: 600, width: '100%', alignSelf: 'center' },
 
   // Section headers
   sectionHeader: {
