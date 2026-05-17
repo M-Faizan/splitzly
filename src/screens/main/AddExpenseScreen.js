@@ -146,7 +146,6 @@ export default function AddExpenseScreen({ route, navigation }) {
   }
 
   function toggleMember(id) {
-    if (id === user.id) return
     setSelectedMembers(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     )
@@ -159,7 +158,7 @@ export default function AddExpenseScreen({ route, navigation }) {
   function getEqualShare() {
     const total = parseFloat(amount) || 0
     const count = selectedMembers.length || 1
-    return Math.floor((total / count) * 100) / 100
+    return Math.round((total / count) * 100) / 100
   }
 
   function customTotal() {
@@ -234,14 +233,15 @@ export default function AddExpenseScreen({ route, navigation }) {
 
     setSaving(true)
     const count = toSplit.length
-    const baseShare = Math.floor((totalAmount / count) * 100) / 100
-    const remainder = Math.round((totalAmount - baseShare * count) * 100) / 100
+    const share = Math.round((totalAmount / count) * 100) / 100
+    // Last person absorbs any cent-level remainder so splits sum exactly to total
+    const lastShare = Math.round((totalAmount - share * (count - 1)) * 100) / 100
 
     const splits = toSplit.map((uid, idx) => ({
       user_id: uid,
       amount: splitMode === 'custom'
-        ? (parseFloat(customAmounts[uid]) || baseShare)
-        : idx === 0 ? baseShare + remainder : baseShare,
+        ? (parseFloat(customAmounts[uid]) || share)
+        : idx === count - 1 ? lastShare : share,
       is_settled: uid === user.id
     }))
 
@@ -467,7 +467,7 @@ export default function AddExpenseScreen({ route, navigation }) {
                 <TouchableOpacity
                   style={styles.memberLeft}
                   onPress={() => toggleMember(m.id)}
-                  activeOpacity={isMe ? 1 : 0.7}
+                  activeOpacity={0.7}
                 >
                   <View style={[styles.checkbox, isSelected && styles.checkboxActive]}>
                     {isSelected && <Text style={styles.checkmark}>✓</Text>}
