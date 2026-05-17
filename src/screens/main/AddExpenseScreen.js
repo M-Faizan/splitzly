@@ -33,6 +33,8 @@ export default function AddExpenseScreen({ route, navigation }) {
   const [receiptItems, setReceiptItems] = useState([])
   const [receiptExpanded, setReceiptExpanded] = useState(true)
   const [date, setDate] = useState(editingExpense?.date ? new Date(editingExpense.date) : new Date())
+  const [paidBy, setPaidBy] = useState(editingExpense?.paid_by || user.id)
+  const [paidByPickerVisible, setPaidByPickerVisible] = useState(false)
   const [addFriendModal, setAddFriendModal] = useState(false)
   const [friendsNotInGroup, setFriendsNotInGroup] = useState([])
   const [addingFriendId, setAddingFriendId] = useState(null)
@@ -242,12 +244,12 @@ export default function AddExpenseScreen({ route, navigation }) {
       amount: splitMode === 'custom'
         ? (parseFloat(customAmounts[uid]) || share)
         : idx === count - 1 ? lastShare : share,
-      is_settled: uid === user.id
+      is_settled: uid === paidBy
     }))
 
     if (editingExpense) {
       const { error } = await supabase.from('expenses').update({
-        description: description.trim(), amount: totalAmount, category
+        description: description.trim(), amount: totalAmount, category, paid_by: paidBy
       }).eq('id', editingExpense.id)
 
       if (error) { setSaving(false); return showAlert('Error', error.message) }
@@ -265,7 +267,7 @@ export default function AddExpenseScreen({ route, navigation }) {
       .from('expenses')
       .insert({
         description: description.trim(), amount: totalAmount, category,
-        paid_by: user.id, group_id: group?.id || null,
+        paid_by: paidBy, group_id: group?.id || null,
         date: date.toISOString()
       })
       .select().single()
@@ -385,7 +387,15 @@ export default function AddExpenseScreen({ route, navigation }) {
         {/* Paid by row */}
         <View style={styles.paidByRow}>
           <Text style={styles.paidByText}>Paid by </Text>
-          <View style={styles.paidByChip}><Text style={styles.paidByChipText}>you</Text></View>
+          <TouchableOpacity
+            style={[styles.paidByChip, styles.paidByChipTappable]}
+            onPress={() => members.length > 1 && setPaidByPickerVisible(true)}
+          >
+            <Text style={styles.paidByChipText}>
+              {paidBy === user.id ? 'you' : (members.find(m => m.id === paidBy)?.name || 'you')}
+            </Text>
+            {members.length > 1 && <Ionicons name="chevron-down" size={11} color={colors.primary} />}
+          </TouchableOpacity>
           <Text style={styles.paidByText}> on </Text>
           <View style={styles.paidByChip}>
             <Text style={styles.paidByChipText}>
@@ -537,8 +547,34 @@ export default function AddExpenseScreen({ route, navigation }) {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Add friend to group modal */}
-      <Modal visible={addFriendModal} animationType="slide" transparent>
+      {/* Paid by picker modal */}
+      <Modal visible={paidByPickerVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Who paid?</Text>
+            <Text style={styles.modalSubtitle}>Select the person who paid for this expense</Text>
+            {members.map((m, idx) => (
+              <TouchableOpacity
+                key={m.id}
+                style={[styles.friendRow, idx < members.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }]}
+                onPress={() => { setPaidBy(m.id); setPaidByPickerVisible(false) }}
+              >
+                <View style={styles.friendAvatar}>
+                  <Text style={styles.friendAvatarText}>{m.name?.[0]?.toUpperCase()}</Text>
+                </View>
+                <Text style={styles.friendName}>{m.id === user.id ? `${m.name} (You)` : m.name}</Text>
+                {paidBy === m.id && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setPaidByPickerVisible(false)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Add friend to group modal */}      <Modal visible={addFriendModal} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modal}>
             <View style={styles.modalHandle} />
@@ -599,6 +635,7 @@ const styles = StyleSheet.create({
   paidByRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 },
   paidByText: { ...typography.caption, color: colors.textSecondary },
   paidByChip: { backgroundColor: colors.primaryLight, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 2 },
+  paidByChipTappable: { flexDirection: 'row', alignItems: 'center', gap: 3, borderWidth: 1, borderColor: colors.primary },
   paidByChipText: { color: colors.primary, fontWeight: '700', fontSize: 12 },
   divider: { height: 1, backgroundColor: colors.border },
   sectionLabel: { ...typography.caption, fontWeight: '600', color: colors.textSecondary },
