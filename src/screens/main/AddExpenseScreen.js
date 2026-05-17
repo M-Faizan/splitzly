@@ -159,7 +159,7 @@ export default function AddExpenseScreen({ route, navigation }) {
   function getEqualShare() {
     const total = parseFloat(amount) || 0
     const count = selectedMembers.length || 1
-    return (total / count).toFixed(2)
+    return Math.floor((total / count) * 100) / 100
   }
 
   function customTotal() {
@@ -233,11 +233,15 @@ export default function AddExpenseScreen({ route, navigation }) {
     }
 
     setSaving(true)
-    const equalShare = totalAmount / toSplit.length
+    const count = toSplit.length
+    const baseShare = Math.floor((totalAmount / count) * 100) / 100
+    const remainder = Math.round((totalAmount - baseShare * count) * 100) / 100
 
-    const splits = toSplit.map(uid => ({
+    const splits = toSplit.map((uid, idx) => ({
       user_id: uid,
-      amount: splitMode === 'custom' ? (parseFloat(customAmounts[uid]) || equalShare) : equalShare,
+      amount: splitMode === 'custom'
+        ? (parseFloat(customAmounts[uid]) || baseShare)
+        : idx === 0 ? baseShare + remainder : baseShare,
       is_settled: uid === user.id
     }))
 
